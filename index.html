@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>xw server</title>
+
+  <!-- ИКОНКА САЙТА -->
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="shortcut icon" href="icon.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    ::-webkit-scrollbar { width: 0px; height: 0px; }
+    * { scrollbar-width: none; -ms-overflow-style: none; }
+
+    :root {
+      --background: oklch(0.145 0 0);
+      --foreground: oklch(0.985 0 0);
+      --card: oklch(0.205 0 0);
+      --muted: oklch(0.269 0 0);
+      --muted-foreground: oklch(0.708 0 0);
+      --border: oklch(1 0 0 / 10%);
+      --radius: 0.625rem;
+      --green: #34C759;
+      --green-hover: #5DD97A;
+      --green-bg: rgba(52, 199, 89, 0.2);
+      --header-bg: rgba(23, 23, 26, 0.85);
+      --shadow: rgba(0, 0, 0, 0.3);
+      --btn-bg: #34C759;
+      --btn-text: #0e0e10;
+      --destructive: oklch(0.704 0.191 22.216);
+      --badge-border: rgba(52, 199, 89, 0.3);
+    }
+
+    [data-theme="light"] {
+      --background: oklch(0.98 0 0);
+      --foreground: oklch(0.145 0 0);
+      --card: oklch(1 0 0);
+      --muted: oklch(0.97 0 0);
+      --muted-foreground: oklch(0.556 0 0);
+      --border: oklch(0.85 0 0);
+      --green: #34C759;
+      --green-hover: #5DD97A;
+      --green-bg: rgba(52, 199, 89, 0.2);
+      --header-bg: rgba(255, 255, 255, 0.85);
+      --shadow: rgba(0, 0, 0, 0.08);
+      --btn-bg: #34C759;
+      --btn-text: #ffffff;
+      --destructive: oklch(0.577 0.245 27.325);
+      --badge-border: rgba(52, 199, 89, 0.4);
+    }
+
+    @keyframes theme-reveal {
+      from { clip-path: circle(0% at var(--x, 50%) var(--y, 50%)); opacity: 0; }
+      to { clip-path: circle(150% at var(--x, 50%) var(--y, 50%)); opacity: 1; }
+    }
+
+    @keyframes theme-fade-out {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    ::view-transition-new(root) {
+      animation: theme-reveal 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      mix-blend-mode: normal;
+      will-change: clip-path, opacity;
+    }
+
+    ::view-transition-old(root) {
+      animation: theme-fade-out 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      will-change: opacity;
+    }
+
+    ::view-transition-group(root) {
+      animation-duration: 1s;
+      animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--background);
+      color: var(--foreground);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding-top: 80px;
+      transition: background 0.3s ease, color 0.3s ease;
+      overflow-x: hidden;
+    }
+
+    a { color: var(--green); text-decoration: none; transition: color 0.3s ease; }
+    a:hover { color: var(--green-hover); }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+      background: var(--header-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0;
+      transition: all 0.3s ease;
+    }
+
+    header.scrolled {
+      background: var(--header-bg);
+      box-shadow: 0 4px 20px var(--shadow);
+    }
+
+    header .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.3s ease;
+    }
+    .logo:hover { transform: scale(1.02); }
+
+    .logo-text {
+      color: var(--foreground);
+      transition: color 0.3s ease;
+    }
+
+    nav {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    nav a {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--muted-foreground);
+      transition: color 0.3s ease;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    nav a:hover { color: var(--foreground); }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 4px 6px;
+      transition: all 0.3s ease;
+      user-select: none;
+      position: relative;
+    }
+    .theme-toggle:hover {
+      border-color: var(--green);
+      transform: scale(1.02);
+    }
+
+    .theme-toggle .toggle-track {
+      position: relative;
+      width: 40px;
+      height: 20px;
+      background: var(--muted);
+      border-radius: 10px;
+      transition: background 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .theme-toggle .toggle-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: var(--green);
+      border-radius: 50%;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .theme-toggle .toggle-thumb.dark { transform: translateX(0); }
+    .theme-toggle .toggle-thumb.light { transform: translateX(20px); }
+
+    .theme-toggle .toggle-icons {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .theme-toggle .toggle-icons svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--muted-foreground);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 0.3s ease;
+    }
+
+    .theme-toggle .toggle-icons.active svg {
+      stroke: var(--green);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 24px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      text-decoration: none;
+    }
+    .btn:hover {
+      background: var(--green-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+      color: var(--btn-text);
+    }
+    .btn:active { transform: translateY(0); }
+
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 40px 0;
+      position: relative;
+    }
+
+    .hero-content {
+      max-width: 640px;
+      animation: slideUp 0.8s ease 0.2s both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      border-radius: 100px;
+      background: var(--green-bg);
+      border: 1px solid var(--badge-border);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--green);
+      letter-spacing: 0.3px;
+      margin-bottom: 20px;
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .hero h1 {
+      font-size: 4rem;
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--green); }
+
+    .hero p {
+      font-size: 1.125rem;
+      color: var(--muted-foreground);
+      max-width: 480px;
+      margin-bottom: 32px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+    }
+    .hero-stats-item {
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease;
+    }
+    .hero-stats-item .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--foreground);
+    }
+    .hero-stats-item .label {
+      font-size: 0.75rem;
+      color: var(--muted-foreground);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .ip-copy {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 18px;
+      font-family: 'Inter', monospace;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--foreground);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .ip-copy:hover {
+      border-color: var(--green);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(52, 199, 89, 0.15);
+    }
+
+    .ip-copy .copied-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: absolute;
+      right: 18px;
+      opacity: 0;
+      transform: translateX(20px);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+      color: var(--green);
+      font-weight: 400;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .ip-copy .copied-wrapper.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .ip-copy .copied-wrapper svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--green);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .ip-copy .ip-text {
+      transition: opacity 0.3s ease;
+    }
+
+    .ip-copy .ip-text.hidden {
+      opacity: 0;
+    }
+
+    section {
+      padding: 80px 0;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.6s ease;
+      scroll-margin-top: 80px;
+    }
+
+    section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .section-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+    }
+    .section-subtitle {
+      color: var(--muted-foreground);
+      font-size: 1.125rem;
+      max-width: 560px;
+    }
+
+    .section-header { margin-bottom: 48px; }
+    .section-header.center { text-align: center; }
+    .section-header.center .section-subtitle { margin: 0 auto; }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+
+    .about-text p {
+      color: var(--muted-foreground);
+      margin-bottom: 16px;
+    }
+    .about-text p:last-child { margin-bottom: 0; }
+
+    .about-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      transition: all 0.3s ease;
+      cursor: default;
+    }
+    .feature-card:hover {
+      border-color: var(--green);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px var(--shadow);
+    }
+    .feature-card h4 {
+      font-size: 0.875rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .feature-card p {
+      font-size: 0.875rem;
+      color: var(--muted-foreground);
+    }
+
+    .status-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+      transition: all 0.3s ease;
+    }
+    .status-card:hover {
+      border-color: var(--green);
+      box-shadow: 0 4px 20px var(--shadow);
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+      transition: background 0.3s ease;
+    }
+    .status-dot.offline {
+      background: var(--destructive);
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .status-info h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+    }
+    .status-info p {
+      color: var(--muted-foreground);
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-players {
+      text-align: right;
+    }
+    .status-players .count {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--green);
+      transition: color 0.3s ease;
+    }
+    .status-players .label {
+      font-size: 0.75rem;
+      color: var(--muted-foreground);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      text-align: center;
+      color: var(--muted-foreground);
+      font-size: 0.875rem;
+      scroll-margin-top: 80px;
+      transition: border-color 0.3s ease;
+    }
+
+    footer a {
+      color: var(--green);
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    footer a:hover { color: var(--green-hover); }
+
+    footer .footer-disclaimer {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--muted-foreground);
+      opacity: 0.7;
+    }
+
+    .scroll-top {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+      font-size: 1.25rem;
+      font-weight: 700;
+      cursor: pointer;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .scroll-top.visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .scroll-top:hover {
+      background: var(--green-hover);
+      transform: translateY(-4px) scale(1.05);
+      color: var(--btn-text);
+    }
+    .scroll-top:active { transform: scale(0.95); }
+
+    @media (max-width: 768px) {
+      nav { gap: 16px; }
+      nav a { font-size: 0.75rem; }
+      .hero h1 { font-size: 2.5rem; }
+      .hero p { font-size: 1rem; }
+      .about-grid { grid-template-columns: 1fr; gap: 32px; }
+      .about-features { grid-template-columns: 1fr; }
+      .section-title { font-size: 1.75rem; }
+      .status-card { flex-direction: column; align-items: stretch; text-align: center; }
+      .status-left { justify-content: center; }
+      .status-players { text-align: center; }
+      .status-players .label { justify-content: center; }
+      .hero-stats { gap: 24px; }
+      .scroll-top { bottom: 20px; right: 20px; width: 40px; height: 40px; font-size: 1rem; }
+    }
+
+    @media (max-width: 480px) {
+      header .container { flex-direction: column; gap: 8px; }
+      nav { gap: 12px; flex-wrap: wrap; justify-content: center; }
+      .hero-actions { flex-direction: column; }
+      .hero-actions .btn { width: 100%; text-align: center; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <header id="header">
+    <div class="container">
+      <div class="logo">
+        <i data-lucide="pickaxe" size="20" color="var(--green)"></i>
+        <span class="logo-text">xw server</span>
+      </div>
+      <nav>
+        <a href="#about"><i data-lucide="info" size="16"></i>О сервере</a>
+        <a href="#status"><i data-lucide="activity" size="16"></i>Статус</a>
+        <a href="#contacts"><i data-lucide="mail" size="16"></i>Связаться</a>
+
+        <div class="theme-toggle" id="themeToggle">
+          <div class="toggle-icons" id="moonIcon">
+            <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </div>
+          <div class="toggle-track">
+            <div class="toggle-thumb dark" id="toggleThumb"></div>
+          </div>
+          <div class="toggle-icons" id="sunIcon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <i data-lucide="crown" size="14"></i>
+          Ванильное выживание
+        </div>
+        <h1>xw <span>server</span></h1>
+        <p>Просто сервер для игры. Заходи, если есть настроение.</p>
+        <div class="hero-actions">
+          <button class="btn" id="connectBtn">
+            <i data-lucide="play" size="16"></i>Подключиться
+          </button>
+          <span class="ip-copy" id="ipCopy">
+            <i data-lucide="copy" size="16"></i>
+            <span class="ip-text" id="ipText">xww.mcsh.io</span>
+            <span class="copied-wrapper" id="copiedWrapper">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Скопировано
+            </span>
+          </span>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stats-item">
+            <span class="value" id="onlineCount">--</span>
+            <span class="label">Игроков онлайн</span>
+          </div>
+          <div class="hero-stats-item">
+            <span class="value">24/7</span>
+            <span class="label">Доступность</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">О сервере</h2>
+        <p class="section-subtitle">Просто ванильный сервер для тех, кто хочет играть в Minecraft.</p>
+      </div>
+      <div class="about-grid">
+        <div class="about-text">
+          <p>
+            xw server — это ванильный Minecraft сервер. Здесь нет доната, нет привилегий — все игроки равны.
+          </p>
+          <p>
+            Сервер работает круглосуточно. Заходи, если есть настроение.
+          </p>
+        </div>
+        <div class="about-features">
+          <div class="feature-card">
+            <h4><i data-lucide="shield" size="16" color="var(--green)"></i>Без доната</h4>
+            <p>Привилегии не продаются, все равны</p>
+          </div>
+          <div class="feature-card">
+            <h4><i data-lucide="server" size="16" color="var(--green)"></i>24/7</h4>
+            <p>Сервер работает без перерывов</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="status">
+    <div class="container">
+      <div class="section-header center">
+        <h2 class="section-title">Статус сервера</h2>
+        <p class="section-subtitle">Актуальная информация о доступности и количестве игроков</p>
+      </div>
+      <div class="status-card">
+        <div class="status-left">
+          <div class="status-dot" id="statusDot"></div>
+          <div class="status-info">
+            <h3 id="statusText">Проверка...</h3>
+            <p><i data-lucide="tag" size="14"></i> Версия: 26.2</p>
+          </div>
+        </div>
+        <div class="status-players">
+          <div class="count" id="onlineCountLarge">--</div>
+          <div class="label"><i data-lucide="users" size="14"></i> Игроков онлайн</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer id="contacts">
+    <div class="container">
+      <p>По вопросам: <a href="mailto:xo4x4ww@gmail.com">xo4x4ww@gmail.com</a></p>
+      <div class="footer-disclaimer">
+        xw server — независимый проект. Не аффилирован с Mojang AB или Microsoft Corporation.
+        Minecraft — зарегистрированная торговая марка Mojang AB.
+      </div>
+    </div>
+  </footer>
+
+  <button class="scroll-top" id="scrollTopBtn">
+    <i data-lucide="arrow-up" size="20"></i>
+  </button>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const SERVER_IP = 'xww.mcsh.io';
+
+      function updateIcons() {
+        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+          lucide.createIcons();
+        }
+      }
+
+      function copyIP() {
+        const ipText = document.getElementById('ipText');
+        const copiedWrapper = document.getElementById('copiedWrapper');
+
+        const copyToClipboard = function(text) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+          }
+          return new Promise(function(resolve, reject) {
+            try {
+              const textarea = document.createElement('textarea');
+              textarea.value = text;
+              textarea.style.position = 'fixed';
+              textarea.style.opacity = '0';
+              textarea.style.left = '-9999px';
+              document.body.appendChild(textarea);
+              textarea.select();
+              const success = document.execCommand('copy');
+              document.body.removeChild(textarea);
+              if (success) {
+                resolve();
+              } else {
+                reject(new Error('execCommand failed'));
+              }
+            } catch (err) {
+              reject(err);
+            }
+          });
+        };
+
+        copyToClipboard(SERVER_IP)
+          .then(function() {
+            ipText.classList.add('hidden');
+            copiedWrapper.classList.add('visible');
+            setTimeout(function() {
+              copiedWrapper.classList.remove('visible');
+              ipText.classList.remove('hidden');
+            }, 2000);
+          })
+          .catch(function() {
+            alert('Не удалось скопировать IP');
+          });
+      }
+
+      document.getElementById('connectBtn').addEventListener('click', copyIP);
+      document.getElementById('ipCopy').addEventListener('click', copyIP);
+
+      document.querySelectorAll('nav a[href^="#"]').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          const target = document.querySelector(targetId);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+
+      document.getElementById('scrollTopBtn').addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      window.addEventListener('scroll', function() {
+        const btn = document.getElementById('scrollTopBtn');
+        const header = document.getElementById('header');
+
+        if (window.scrollY > 250) {
+          btn.classList.add('visible');
+        } else {
+          btn.classList.remove('visible');
+        }
+
+        if (window.scrollY > 50) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+
+      const sections = document.querySelectorAll('section');
+      const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+      sections.forEach(function(section) {
+        observer.observe(section);
+      });
+
+      function fetchServerStatus() {
+        const dot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const onlineCount = document.getElementById('onlineCount');
+        const onlineCountLarge = document.getElementById('onlineCountLarge');
+
+        const setOffline = function() {
+          dot.className = 'status-dot offline';
+          statusText.textContent = 'Сервер недоступен';
+          onlineCount.textContent = '--';
+          onlineCountLarge.textContent = '--';
+        };
+
+        fetch('https://api.mcsrvstat.us/2/' + SERVER_IP)
+          .then(function(response) {
+            if (!response.ok) {
+              throw new Error('HTTP error ' + response.status);
+            }
+            return response.json();
+          })
+          .then(function(data) {
+            if (data.online === true) {
+              dot.className = 'status-dot';
+              statusText.textContent = 'Сервер работает';
+              const players = data.players?.online || 0;
+              onlineCount.textContent = players;
+              onlineCountLarge.textContent = players;
+            } else {
+              setOffline();
+            }
+          })
+          .catch(function() {
+            setOffline();
+          });
+      }
+
+      fetchServerStatus();
+      setInterval(fetchServerStatus, 60000);
+
+      const themeToggle = document.getElementById('themeToggle');
+      const toggleThumb = document.getElementById('toggleThumb');
+      const sunIcon = document.getElementById('sunIcon');
+      const moonIcon = document.getElementById('moonIcon');
+      const html = document.documentElement;
+
+      function setTheme(theme, clickX, clickY) {
+        document.documentElement.style.setProperty('--x', (clickX || window.innerWidth / 2) + 'px');
+        document.documentElement.style.setProperty('--y', (clickY || window.innerHeight / 2) + 'px');
+
+        if (theme === 'light') {
+          html.setAttribute('data-theme', 'light');
+          toggleThumb.className = 'toggle-thumb light';
+          sunIcon.classList.add('active');
+          moonIcon.classList.remove('active');
+          localStorage.setItem('theme', 'light');
+        } else {
+          html.removeAttribute('data-theme');
+          toggleThumb.className = 'toggle-thumb dark';
+          moonIcon.classList.add('active');
+          sunIcon.classList.remove('active');
+          localStorage.setItem('theme', 'dark');
+        }
+
+        updateIcons();
+      }
+
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'light') {
+        setTheme('light');
+      } else {
+        setTheme('dark');
+      }
+
+      themeToggle.addEventListener('click', function(e) {
+        const rect = themeToggle.getBoundingClientRect();
+        const clickX = rect.left + rect.width / 2;
+        const clickY = rect.top + rect.height / 2;
+
+        const currentTheme = html.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+        if (document.startViewTransition) {
+          document.startViewTransition(function() {
+            setTheme(newTheme, clickX, clickY);
+          });
+        } else {
+          setTheme(newTheme, clickX, clickY);
+        }
+      });
+
+      document.querySelectorAll('.toggle-icons').forEach(function(icon) {
+        icon.addEventListener('click', function(e) {
+          e.stopPropagation();
+          themeToggle.click();
+        });
+      });
+
+      updateIcons();
+    });
+  </script>
+</body>
+</html>
