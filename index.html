@@ -27,13 +27,14 @@
       --radius: 0.625rem;
       --green: #34C759;
       --green-hover: #5DD97A;
-      --green-bg: rgba(52, 199, 89, 0.2);
       --header-bg: rgba(23, 23, 26, 0.85);
       --shadow: rgba(0, 0, 0, 0.3);
       --btn-bg: #34C759;
       --btn-text: #0e0e10;
       --destructive: oklch(0.704 0.191 22.216);
+      --badge-bg: rgba(52, 199, 89, 0.15);
       --badge-border: rgba(52, 199, 89, 0.3);
+      --badge-text: #4ade80;
     }
 
     [data-theme="light"] {
@@ -45,13 +46,14 @@
       --border: oklch(0.85 0 0);
       --green: #34C759;
       --green-hover: #5DD97A;
-      --green-bg: rgba(52, 199, 89, 0.2);
       --header-bg: rgba(255, 255, 255, 0.85);
       --shadow: rgba(0, 0, 0, 0.08);
       --btn-bg: #34C759;
       --btn-text: #ffffff;
       --destructive: oklch(0.577 0.245 27.325);
-      --badge-border: rgba(52, 199, 89, 0.4);
+      --badge-bg: rgba(52, 199, 89, 0.1);
+      --badge-border: rgba(52, 199, 89, 0.3);
+      --badge-text: #1a7a2a;
     }
 
     @keyframes theme-reveal {
@@ -267,14 +269,16 @@
       gap: 6px;
       padding: 6px 16px;
       border-radius: 100px;
-      background: var(--green-bg);
+      background: var(--badge-bg);
       border: 1px solid var(--badge-border);
       font-size: 0.75rem;
       font-weight: 600;
-      color: var(--green);
+      color: var(--badge-text);
       letter-spacing: 0.3px;
       margin-bottom: 20px;
-      transition: background 0.3s ease, border-color 0.3s ease;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
 
     .hero h1 {
